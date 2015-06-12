@@ -1,0 +1,13 @@
+{
+  "name": "linter-cspm",
+  "linter-package": true,
+  "main": "./lib/init",
+  "version": "0.0.0",
+  "description": "Typechecks CSPM using FDR3",
+  "repository": "https://github.com/cspm/atom-linter-cspm",
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {}
+}
