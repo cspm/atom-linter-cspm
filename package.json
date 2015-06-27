@@ -1,6 +1,5 @@
 {
   "name": "linter-cspm",
-  "linter-package": true,
   "main": "./lib/init",
   "version": "1.0.0",
   "description": "Typechecks CSPM using FDR3",
@@ -9,5 +8,12 @@
   "engines": {
     "atom": ">0.50.0"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "providedServices": {
+    "linter": {
+      "versions": {
+        "1.0.0": "provideLinter"
+      }
+    }
+  }
 }
