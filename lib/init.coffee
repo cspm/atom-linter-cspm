@@ -2,13 +2,6 @@ path = require 'path'
 fs = require 'fs'
 {BufferedProcess, CompositeDisposable, Range} = require 'atom'
 
-linterPackage = atom.packages.getLoadedPackage 'linter'
-unless linterPackage
-  return atom.notifications.addError 'Linter should be installed first, `apm install linter`', dismissable: true
-linterPath = linterPackage.path
-
-Linter = require "#{linterPath}/lib/linter"
-
 splitRange = (string) ->
   if string == "<unknown location>"
     return null
