@@ -64,14 +64,11 @@ module.exports =
               for line in data.split("\n")
                 lines.push line
             exit: (code) ->
-              console.log 'linter-cspm refines exited with', code, lines.length
               messages = []
               currentMessage = null
-              console.log lines
               for line in lines
                 if line == ""
                   continue
-                console.log line, typeof(line)
                 if currentMessage == null or line.indexOf("    ") != 0
                   # Start a new message
                   if currentMessage
@@ -80,7 +77,7 @@ module.exports =
                   if line == "<unknown location>:"
                     currentMessage = {
                       type: 'error',
-                      text: "Could not open #{filePath}",
+                      text: "",
                       filePath: textEditor.getPath(),
                     }
                   else
@@ -102,6 +99,7 @@ module.exports =
                     currentMessage.text += line.slice(4)+"\n"
 
               if currentMessage
+                console.log currentMessage
                 messages.push currentMessage
               
               resolve messages 
