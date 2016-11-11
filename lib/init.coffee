@@ -71,7 +71,7 @@ module.exports =
                   continue
                 if currentMessage == null or line.indexOf("    ") != 0
                   # Start a new message
-                  if currentMessage
+                  if currentMessage and currentMessage.text.length > 0
                     messages.push currentMessage
                     
                   if line == "<unknown location>:"
@@ -98,10 +98,10 @@ module.exports =
                   if currentMessage.text.length == 0
                     currentMessage.text += line.slice(4)+"\n"
 
-              if currentMessage
-                console.log currentMessage
+              if currentMessage and currentMessage.text.length > 0
                 messages.push currentMessage
-              
+
+              console.log messages
               resolve messages 
 
           process.onWillThrowError ({error,handle}) ->
