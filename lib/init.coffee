@@ -27,10 +27,10 @@ module.exports =
     fdrInstallDirectory:
       default:
         switch process.platform
-          when 'win32' then "C:\\Program Files\\FDR3\\bin\\"
-          when 'darwin' then "/Applications/FDR3.app/Contents/MacOS/"
+          when 'win32' then "C:\\Program Files\\FDR4\\bin\\"
+          when 'darwin' then "/Applications/FDR4.app/Contents/MacOS/"
           when 'linux' then "/opt/fdr/bin/"
-      title: "Path to directory containing fdr3"
+      title: "Path to directory containing fdr4"
       type: "string"
   
   activate: ->
