@@ -1,7 +1,7 @@
 {
   "name": "linter-cspm",
   "main": "./lib/init",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Typechecks CSPM using FDR4",
   "repository": "https://github.com/cspm/atom-linter-cspm",
   "license": "MIT",
