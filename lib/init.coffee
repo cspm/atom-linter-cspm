@@ -22,6 +22,63 @@ getRootCSPFile = (fileName) ->
   else
     return fileName
 
+definedString = (string) ->
+   definedAt = string.indexOf(".csp")
+   if definedAt >= 0
+     console.log "Some .cps link"
+     # there is some .csp file, replace it by an actual link!
+     match = /:\d+:\d+-\d+:\d+/.exec(string)
+     if match != null
+       pathEnding = string.lastIndexOf(match)
+       pathStart = string.lastIndexOf(" ",pathEnding)
+       lineInfo = match[0].split(":")
+       lineNo = lineInfo[1]
+       colNo = lineInfo[2].split("-")[0]
+       console.log "lineNo: " +lineNo + " col:" + colNo
+       if pathEnding >=0 and pathStart >= 0
+         pathurl = string.slice(pathStart+1,pathEnding)
+         return "* "+string.slice(0,pathStart)+" ["+string.slice(pathStart+1,string.length-1)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+") "
+       else
+         return string
+     else
+       match = /:\d+:\d+-\d+/.exec(string)
+       if match != null
+         pathEnding = string.lastIndexOf(match)
+         pathStart = string.lastIndexOf(" ",pathEnding)
+         lineInfo = match[0].split(":")
+         lineNo = lineInfo[1]
+         colNo = lineInfo[2].split("-")[0]
+         console.log "lineNo: " +lineNo + " col:" + colNo
+         if pathEnding >=0 and pathStart >= 0
+           pathurl = string.slice(pathStart+1,pathEnding)
+
+           return "* "+string.slice(0,pathStart)+" ["+string.slice(pathStart+1,string.length-1)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+") "
+         else
+           return string
+   else
+     console.log "No .csp"
+     return string
+#  definedAt = string.indexOf("defined at")
+#  if definedAt >= 0
+#    definedAt = definedAt+10
+#    match = string.exec(/:\d+:\d+-\d+:\d+)/)
+#    if match != null
+#      lineNumber = match.split(':')[0]
+#      pathPos = string.lastIndexOf(match)
+#      path = string.slice(definedAt,pathPos-1)
+#      return string.slice(0,definedAt)+"["+string.slice(definedAt+1,string.length-1)"]("+path+"))"
+#    else
+#      match = string.exec(/:\d+:\d+-\d+)/)
+#    if match != null
+#        lineNumber = match.split(':')[0]
+#          pathPos = string.lastIndexOf(match)
+#          path = string.slice(definedAt,pathPos-1)
+#          return string.slice(0,definedAt)+"["+string.slice(definedAt+1,string.length-1)"]("+path+"))"
+#      else
+#        return string
+#  else
+#    return string
+
 module.exports =
   config:
     fdrInstallDirectory:
@@ -118,9 +175,9 @@ module.exports =
                     currentMessage.excerpt += line.slice(4)+"\n"
                   else
                     if currentMessage.description
-                      currentMessage.description += "\r"+line
+                      currentMessage.description += "\r"+definedString line
                     else
-                      currentMessage.description = line
+                      currentMessage.description = definedString line
 
                 console.log "In Promise:"+currentMessage
                 console.log "Message text:"+currentMessage.excerpt
