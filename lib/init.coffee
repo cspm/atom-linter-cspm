@@ -40,7 +40,6 @@ minimizeStr = (string1,string2) ->
 definedString = (textEditor,string) ->
    definedAt = string.indexOf(".csp")
    if definedAt >= 0
-     #console.log "Some .cps link"
      # there is some .csp file, replace it by an actual link!
      match = /:\d+:\d+-\d+:\d+/.exec(string)
      if match != null
@@ -49,7 +48,7 @@ definedString = (textEditor,string) ->
        lineInfo = match[0].split(":")
        lineNo = lineInfo[1]
        colNo = lineInfo[2].split("-")[0]
-       #console.log "lineNo: " +lineNo + " col:" + colNo
+
        if pathEnding >=0 and pathStart >= 0
          pathurl = string.slice(pathStart+1,pathEnding)
          # Because displayPath may be rather long, we attempt to shorten it using
@@ -57,7 +56,6 @@ definedString = (textEditor,string) ->
          filePath = textEditor.getPath()
          displayPath = string.slice(pathStart+1,pathEnding+match[0].length)
          remaining = string.slice(pathEnding+match[0].length,string.length)
-         #console.log "curr path: " + filePath + "so: " + minimizeStr(displayPath,filePath)
          return "* "+string.slice(0,pathStart)+" ["+minimizeStr(displayPath,filePath)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+")"+remaining
        else
          return string
@@ -72,39 +70,15 @@ definedString = (textEditor,string) ->
 
          filePath = getRootCSPFile(textEditor.getPath())
 
-         #console.log "lineNo: " +lineNo + " col:" + colNo
          if pathEnding >=0 and pathStart >= 0
            pathurl = string.slice(pathStart+1,pathEnding)
            displayPath = string.slice(pathStart+1,pathEnding+match[0].length)
            remaining = string.slice(pathEnding+match[0].length,string.length)
-           #console.log "match.length:" + match[0].length + "remaining"+remaining
-           #console.log "curr path: " + filePath + " displaypath: " + displayPath + "so: " + minimizeStr(displayPath,filePath)
            return "* "+string.slice(0,pathStart)+" ["+minimizeStr(displayPath,filePath)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+")"+remaining
          else
            return string
    else
-     #console.log "No .csp"
      return string
-#  definedAt = string.indexOf("defined at")
-#  if definedAt >= 0
-#    definedAt = definedAt+10
-#    match = string.exec(/:\d+:\d+-\d+:\d+)/)
-#    if match != null
-#      lineNumber = match.split(':')[0]
-#      pathPos = string.lastIndexOf(match)
-#      path = string.slice(definedAt,pathPos-1)
-#      return string.slice(0,definedAt)+"["+string.slice(definedAt+1,string.length-1)"]("+path+"))"
-#    else
-#      match = string.exec(/:\d+:\d+-\d+)/)
-#    if match != null
-#        lineNumber = match.split(':')[0]
-#          pathPos = string.lastIndexOf(match)
-#          path = string.slice(definedAt,pathPos-1)
-#          return string.slice(0,definedAt)+"["+string.slice(definedAt+1,string.length-1)"]("+path+"))"
-#      else
-#        return string
-#  else
-#    return string
 
 module.exports =
   config:
@@ -154,7 +128,7 @@ module.exports =
               for line in lines
                 if line == ""
                   continue
-                console.log "Line:"+line
+
                 if currentMessage == null or line.indexOf("    ") != 0
                   # Start a new message
                   if currentMessage and currentMessage.excerpt.length > 0
@@ -191,9 +165,6 @@ module.exports =
                       [lineStart, lineEnd] = linesRange
                       currentMessage.location.position = new Range([lineStart-1, colStart-1], [lineEnd-1, colEnd-1])
 
-                  console.log "Message:"+currentMessage
-                  console.log "Position:"+columnsRange+" - "+linesRange
-
                 if line.indexOf("    ") != 0
                   currentMessage.excerpt = line.slice(line.lastIndexOf(":", line.length)+1)
 
@@ -206,12 +177,9 @@ module.exports =
                     else
                       currentMessage.description = definedString(textEditor,line)
 
-                console.log "In Promise:"+currentMessage
-                console.log "Message text:"+currentMessage.excerpt
               if currentMessage and currentMessage.excerpt.length > 0
                 messages.push currentMessage
 
-              console.log messages
               resolve messages
 
           process.onWillThrowError ({error,handle}) ->
