@@ -22,6 +22,64 @@ getRootCSPFile = (fileName) ->
   else
     return fileName
 
+minimizeStr = (string1,string2) ->
+    i = 0
+    delimiter = 0
+
+    while i < string2.length and i < string1.length
+      if string1.charAt(i) == '/' or string1.charAt(i) == '\\'
+        delimiter = i
+
+      if string1.charAt(i) == string2.charAt(i)
+        i++
+      else
+        break
+
+    return string1.slice(delimiter+1,string1.length)
+
+definedString = (textEditor,string) ->
+   definedAt = string.indexOf(".csp")
+   if definedAt >= 0
+     # there is some .csp file, replace it by an actual link!
+     match = /:\d+:\d+-\d+:\d+/.exec(string)
+     if match != null
+       pathEnding = string.lastIndexOf(match)
+       pathStart = string.lastIndexOf(" ",pathEnding)
+       lineInfo = match[0].split(":")
+       lineNo = lineInfo[1]
+       colNo = lineInfo[2].split("-")[0]
+
+       if pathEnding >=0 and pathStart >= 0
+         pathurl = string.slice(pathStart+1,pathEnding)
+         # Because displayPath may be rather long, we attempt to shorten it using
+         # the current path of the file.
+         filePath = textEditor.getPath()
+         displayPath = string.slice(pathStart+1,pathEnding+match[0].length)
+         remaining = string.slice(pathEnding+match[0].length,string.length)
+         return "* "+string.slice(0,pathStart)+" ["+minimizeStr(displayPath,filePath)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+")"+remaining
+       else
+         return string
+     else
+       match = /:\d+:\d+-\d+/.exec(string)
+       if match != null
+         pathEnding = string.lastIndexOf(match)
+         pathStart = string.lastIndexOf(" ",pathEnding)
+         lineInfo = match[0].split(":")
+         lineNo = lineInfo[1]
+         colNo = lineInfo[2].split("-")[0]
+
+         filePath = getRootCSPFile(textEditor.getPath())
+
+         if pathEnding >=0 and pathStart >= 0
+           pathurl = string.slice(pathStart+1,pathEnding)
+           displayPath = string.slice(pathStart+1,pathEnding+match[0].length)
+           remaining = string.slice(pathEnding+match[0].length,string.length)
+           return "* "+string.slice(0,pathStart)+" ["+minimizeStr(displayPath,filePath)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+")"+remaining
+         else
+           return string
+   else
+     return string
+
 module.exports =
   config:
     fdrInstallDirectory:
@@ -32,14 +90,14 @@ module.exports =
           when 'linux' then "/opt/fdr/bin/"
       title: "Path to directory containing fdr4"
       type: "string"
-  
+
   activate: ->
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.config.observe 'linter-cspm.fdrInstallDirectory', @createShellCommand
-      
+
   deactivate: ->
     @subscriptions.dispose()
-  
+
   createShellCommand: =>
     fdrDir = atom.config.get 'linter-cspm.fdrInstallDirectory'
     executable = 'refines'+(if process.platform == 'win32' then ".exe" else '')
@@ -47,9 +105,10 @@ module.exports =
 
   provideLinter: ->
     provider =
+      name: 'CSPm'
       grammarScopes: ['source.cspm']
       scope: 'file'
-      lintOnFly: false
+      lintsOnChange: false
       lint: (textEditor) =>
         fdrDir = atom.config.get 'linter-cspm.fdrInstallDirectory'
         executable = 'refines'+(if process.platform == 'win32' then ".exe" else '')
@@ -69,40 +128,59 @@ module.exports =
               for line in lines
                 if line == ""
                   continue
+
                 if currentMessage == null or line.indexOf("    ") != 0
                   # Start a new message
-                  if currentMessage and currentMessage.text.length > 0
+                  if currentMessage and currentMessage.excerpt.length > 0
                     messages.push currentMessage
-                    
-                  if line == "<unknown location>:"
+
+                  if line.startsWith("<unknown location>:")
                     currentMessage = {
-                      type: 'error',
-                      text: "",
-                      filePath: textEditor.getPath(),
+                      severity: 'error',
+                      excerpt: "",
+                      location: {
+                        file: textEditor.getPath(),
+                        position: [[0,0],[0,0]]
+                      }
                     }
                   else
-                    columnsStart = line.lastIndexOf(":", line.length-2)
+                    columnsStart = line.lastIndexOf(":", line.length)
+
+                    # If it is not multi-line, then the difference from EOL is greater
+                    if line.indexOf("    ") != 0
+                      columnsStart = line.lastIndexOf(":",columnsStart-1)
+
                     lineNumPos = line.lastIndexOf(":", columnsStart-1)
-                    columnsRange = splitRange(line.slice(columnsStart+1, line.length-1))
+                    columnsRange = splitRange(line.slice(columnsStart+1, line.length))
                     linesRange = splitRange(line.slice(lineNumPos+1, columnsStart))
                     currentMessage = {
-                      type: 'error',
-                      text: "",
-                      filePath: line.slice(0, lineNumPos),
+                      severity: 'error',
+                      excerpt: "",
+                      location: {
+                        file: line.slice(0, lineNumPos)
+                      }
                     }
                     if columnsRange and linesRange
                       [colStart, colEnd] = columnsRange
                       [lineStart, lineEnd] = linesRange
-                      currentMessage.range = new Range([lineStart-1, colStart-1], [lineEnd-1, colEnd-1])
-                else
-                  if currentMessage.text.length == 0
-                    currentMessage.text += line.slice(4)+"\n"
+                      currentMessage.location.position = new Range([lineStart-1, colStart-1], [lineEnd-1, colEnd-1])
 
-              if currentMessage and currentMessage.text.length > 0
+                if line.indexOf("    ") != 0
+                  currentMessage.excerpt = line.slice(line.lastIndexOf(":", line.length)+1)
+
+                else
+                  if currentMessage.excerpt.length == 0
+                    currentMessage.excerpt += line.slice(4)+"\n"
+                  else
+                    if currentMessage.description
+                      currentMessage.description += "\r"+definedString(textEditor,line)
+                    else
+                      currentMessage.description = definedString(textEditor,line)
+
+              if currentMessage and currentMessage.excerpt.length > 0
                 messages.push currentMessage
 
-              console.log messages
-              resolve messages 
+              resolve messages
 
           process.onWillThrowError ({error,handle}) ->
             atom.notifications.addError "Failed to run #{@executablePath}",
