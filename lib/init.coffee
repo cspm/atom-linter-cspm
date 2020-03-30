@@ -22,10 +22,25 @@ getRootCSPFile = (fileName) ->
   else
     return fileName
 
-definedString = (string) ->
+minimizeStr = (string1,string2) ->
+    i = 0
+    delimiter = 0
+
+    while i < string2.length and i < string1.length
+      if string1.charAt(i) == '/' or string1.charAt(i) == '\\'
+        delimiter = i
+
+      if string1.charAt(i) == string2.charAt(i)
+        i++
+      else
+        break
+
+    return string1.slice(delimiter+1,string1.length)
+
+definedString = (textEditor,string) ->
    definedAt = string.indexOf(".csp")
    if definedAt >= 0
-     console.log "Some .cps link"
+     #console.log "Some .cps link"
      # there is some .csp file, replace it by an actual link!
      match = /:\d+:\d+-\d+:\d+/.exec(string)
      if match != null
@@ -34,10 +49,16 @@ definedString = (string) ->
        lineInfo = match[0].split(":")
        lineNo = lineInfo[1]
        colNo = lineInfo[2].split("-")[0]
-       console.log "lineNo: " +lineNo + " col:" + colNo
+       #console.log "lineNo: " +lineNo + " col:" + colNo
        if pathEnding >=0 and pathStart >= 0
          pathurl = string.slice(pathStart+1,pathEnding)
-         return "* "+string.slice(0,pathStart)+" ["+string.slice(pathStart+1,string.length-1)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+") "
+         # Because displayPath may be rather long, we attempt to shorten it using
+         # the current path of the file.
+         filePath = textEditor.getPath()
+         displayPath = string.slice(pathStart+1,pathEnding+match[0].length)
+         remaining = string.slice(pathEnding+match[0].length,string.length)
+         #console.log "curr path: " + filePath + "so: " + minimizeStr(displayPath,filePath)
+         return "* "+string.slice(0,pathStart)+" ["+minimizeStr(displayPath,filePath)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+")"+remaining
        else
          return string
      else
@@ -48,15 +69,21 @@ definedString = (string) ->
          lineInfo = match[0].split(":")
          lineNo = lineInfo[1]
          colNo = lineInfo[2].split("-")[0]
-         console.log "lineNo: " +lineNo + " col:" + colNo
+
+         filePath = getRootCSPFile(textEditor.getPath())
+
+         #console.log "lineNo: " +lineNo + " col:" + colNo
          if pathEnding >=0 and pathStart >= 0
            pathurl = string.slice(pathStart+1,pathEnding)
-
-           return "* "+string.slice(0,pathStart)+" ["+string.slice(pathStart+1,string.length-1)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+") "
+           displayPath = string.slice(pathStart+1,pathEnding+match[0].length)
+           remaining = string.slice(pathEnding+match[0].length,string.length)
+           #console.log "match.length:" + match[0].length + "remaining"+remaining
+           #console.log "curr path: " + filePath + " displaypath: " + displayPath + "so: " + minimizeStr(displayPath,filePath)
+           return "* "+string.slice(0,pathStart)+" ["+minimizeStr(displayPath,filePath)+"](atom://core/open/file?filename="+pathurl+"&line="+lineNo+"&column="+colNo+")"+remaining
          else
            return string
    else
-     console.log "No .csp"
+     #console.log "No .csp"
      return string
 #  definedAt = string.indexOf("defined at")
 #  if definedAt >= 0
@@ -175,9 +202,9 @@ module.exports =
                     currentMessage.excerpt += line.slice(4)+"\n"
                   else
                     if currentMessage.description
-                      currentMessage.description += "\r"+definedString line
+                      currentMessage.description += "\r"+definedString(textEditor,line)
                     else
-                      currentMessage.description = definedString line
+                      currentMessage.description = definedString(textEditor,line)
 
                 console.log "In Promise:"+currentMessage
                 console.log "Message text:"+currentMessage.excerpt
